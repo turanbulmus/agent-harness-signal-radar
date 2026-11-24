@@ -1,0 +1,64 @@
+name: AgentOps CI & Evaluation Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test-eval:
+    name: Lint, Unit Tests & Golden Dataset Eval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install project and dev dependencies
+        run: uv pip install --system ".[dev]"
+
+      - name: Run Ruff static analysis
+        run: ruff check .
+
+      - name: Run unit and integration test suite
+        run: pytest -v
+
+      - name: Run golden dataset regression evaluation (threshold >= 0.95)
+        run: python eval/run_evaluation.py --min-score 0.95
+
+      - name: Verify simulated end-to-end CLI flow
+        run: python scripts/demo_cli.py --simulate
+
+  terraform-validate:
+    name: Terraform Format & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: Initialize Terraform (no backend)
+        working-directory: infra/terraform
+        run: terraform init -backend=false
+
+      - name: Validate Terraform configuration
+        working-directory: infra/terraform
+        run: terraform validate

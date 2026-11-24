@@ -1,0 +1,9 @@
+project_id              = "your-gcp-project-id"
+region                  = "us-central1"
+environment             = "prod"
+service_name            = "harness-signal-radar"
+container_image         = "us-central1-docker.pkg.dev/your-gcp-project-id/agents/harness-signal-radar:0.1.0"
+reasoning_model         = "gemini-2.5-pro"
+fast_model              = "gemini-2.5-flash"
+enable_cloud_dlp        = true
+model_armor_template_id = ""
